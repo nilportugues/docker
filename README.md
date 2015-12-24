@@ -24,7 +24,7 @@ Install Docker and Docker Compose.
 ## Usage
 
 ```sh
-$ docker-compose up -d
+$ ./docker.sh start
 ```
 It's that simple! 
 
