@@ -1,8 +1,6 @@
-FROM phusion/baseimage
+FROM ubuntu:14.04.3
 
 MAINTAINER Nil Portugués Calderó <contact@nilportugues.com>
-
-CMD ["/sbin/my_init"]
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN groupadd -r redis && useradd -r -g redis redis
@@ -42,6 +40,10 @@ RUN buildDeps='gcc libc6-dev make' \
 RUN mkdir /data && chown redis:redis /data
 VOLUME /data
 WORKDIR /data
+
+COPY templates/somaxconn /proc/sys/net/core/somaxconn
+COPY templates/sysctl.conf /etc/sysctl.conf
+COPY templates/enabled /sys/kernel/mm/transparent_hugepage/enabled
 
 COPY start.sh /start.sh
 ENTRYPOINT ["/start.sh"]

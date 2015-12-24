@@ -1,9 +1,12 @@
-FROM ubuntu:14.04
+FROM phusion/baseimage
 
-ENV DEBIAN_FRONTEND noninteractive
+MAINTAINER Nil Portugués Calderó <contact@nilportugues.com>
+
+CMD ["/sbin/my_init"]
+
 
 RUN apt-get clean &&  apt-get update
-RUN apt-get install -y mysql-server
+RUN apt-get install -y mysql-server-5.6
 
 ADD templates/my.cnf /etc/mysql/my.cnf
 
@@ -16,4 +19,5 @@ RUN /usr/sbin/mysqld & \
     echo "CREATE USER 'slave'@'%' IDENTIFIED BY 'reader';GRANT SELECT ON *.* TO 'slave'@'%'; FLUSH PRIVILEGES" | mysql
 
 EXPOSE 3306
-CMD ["/usr/bin/mysqld_safe"]
+
+CMD ["/usr/bin/mysqld_safe", "-D", "FOREGROUND"]
