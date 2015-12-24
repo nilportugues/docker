@@ -1,0 +1,77 @@
+nginx:
+  container_name: nginx
+  build: ./etc/nginx
+  ports:
+    - 8000:8000
+    - 4430:4430
+  volumes:
+    - ./var/www:/var/www
+    - ./etc/nginx/helpers/directive-only:/etc/nginx/helpers/directive-only
+    - ./etc/nginx/helpers/location:/etc/nginx/helpers/location
+    - ./etc/nginx/helpers/basic.conf:/etc/nginx/helpers/basic.conf
+    - ./etc/nginx/sites-enabled:/etc/nginx/sites-enabled
+
+elasticsearch:
+  container_name: elasticsearch
+  build: ./etc/elasticsearch
+  ports:
+    - 9300:9300
+    - 9200:9200
+  environment:
+    - elasticsearch/marvel/latest
+
+varnish:
+  container_name: varnish
+  build: ./etc/varnish
+  ports:
+    - 80:80
+    - 443:443
+  environment: ## need to fix this script to allow multiple configs, but working
+    - VARNISH_BACKEND_IP=nginx
+    - VARNISH_BACKEND_PORT=8000 #nginx's port
+  links:
+    - nginx
+    - elasticsearch
+
+memcached:
+    container_name: memcached
+    build: ./etc/memcached
+    ports:
+      - 11211
+    environment:
+      - MEMCACHED_MEMORY_LIMIT=120
+
+redis:
+  container_name: redis
+  build: ./etc/redis
+  ports:
+    - 6379:6379
+
+##
+#mysql:
+#  build: ./etc/mysql
+#  ports:
+#    - 3309:3306
+##
+
+#nodejs:
+#  build: ./etc/nodejs
+#  ports:
+#    -
+#
+#php7:
+#  build: ./etc/php7
+#
+#rabbitmq:
+#  build: ./etc/rabbitmq
+#  ports:
+#    - 5672:5672
+#    - 15672:15672
+#
+
+#supervisord:
+#  build: ./etc/supervisord
+#  ports:
+#    -
+#
+
