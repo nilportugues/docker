@@ -1,5 +1,6 @@
 # Docker Containers for Web Development
 
+![Docker Logo](https://www.docker.com/sites/all/themes/docker/assets/images/logo.png)
 
 ## Contents
 
