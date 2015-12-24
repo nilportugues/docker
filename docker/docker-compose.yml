@@ -22,9 +22,8 @@ redis:
   ports:
     - 6379:6379
 
+
 ########################################################################################################
-
-
 
 elasticsearch:
   container_name: elasticsearch
@@ -44,25 +43,25 @@ varnish:
     - 80:80
     - 443:443
   environment: ## need to fix this script to allow multiple configs, but working
-    - VARNISH_BACKEND_IP=nginx
+    - VARNISH_BACKEND_IP=nginx_php7
     - VARNISH_BACKEND_PORT=8000 #nginx's port
   links:
-    - nginx:nginx
+    - nginx_php7:nginx_php7
 
 ########################################################################################################
 
-nginx:
-  container_name: nginx
-  build: ./../etc/nginx
+nginx_php7:
+  container_name: nginx_php7
+  build: ./../etc/nginx_php7
   ports:
     - 8000:8000
     - 4430:4430
   volumes:
     - ./../var/www:/var/www
-    - ./../etc/nginx/helpers/directive-only:/etc/nginx/helpers/directive-only
-    - ./../etc/nginx/helpers/location:/etc/nginx/helpers/location
-    - ./../etc/nginx/helpers/basic.conf:/etc/nginx/helpers/basic.conf
-    - ./../etc/nginx/sites-enabled:/etc/nginx/sites-enabled
+    - ./../etc/nginx_php7/helpers/directive-only:/etc/nginx/helpers/directive-only
+    - ./../etc/nginx_php7/helpers/location:/etc/nginx/helpers/location
+    - ./../etc/nginx_php7/helpers/basic.conf:/etc/nginx/helpers/basic.conf
+    - ./../etc/nginx_php7/sites-enabled:/etc/nginx/sites-enabled
   links:
     - redis:redis
     - memcached:memcached
@@ -79,9 +78,7 @@ nginx:
 #  ports:
 #    -
 #
-#php7fpm:
-#  build: ./../etc/php7fpm
-#
+
 #rabbitmq:
 #  build: ./../etc/rabbitmq
 #  ports:

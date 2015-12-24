@@ -12,6 +12,15 @@
 
 Install Docker and Docker Compose.
  
+## Includes
+ 
+ - PHP 7.0
+ - MySQL 5.6
+ - Nginx
+ - Redis
+ - Memcached
+ - Elastic (Formerly Elasticsearch)
+ 
 ## Usage
 
 ```sh
