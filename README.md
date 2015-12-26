@@ -20,6 +20,7 @@ Install Docker and Docker Compose.
  - Redis
  - Memcached
  - Elastic (Formerly Elasticsearch)
+ - Ansistrano
  
 ## Usage
 
