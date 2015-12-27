@@ -13,7 +13,7 @@ RUN apt-get update -qq && \
 # Make our custom VCLs available on the container
 ADD templates/default.vcl /etc/varnish/default.vcl
 
-ENV VARNISH_BACKEND_PORT 80
+ENV VARNISH_BACKEND_PORT 8000
 ENV VARNISH_BACKEND_IP 172.17.42.1
 ENV VARNISH_PORT 80
 

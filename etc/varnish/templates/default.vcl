@@ -18,12 +18,8 @@ sub vcl_deliver
     ##------------------------------------------------------------------------------
     ## Add some headers
     ##------------------------------------------------------------------------------
-    set resp.http.Cache-Control = "public";
-
-    ##------------------------------------------------------------------------------
-    ## Add some headers for debugging purposes only
-    ##------------------------------------------------------------------------------
     if (obj.hits > 0) {
+        set resp.http.Cache-Control = "public";
         set resp.http.X-Cache = "HIT";
     } else {
         set resp.http.X-Cache = "MISS";

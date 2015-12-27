@@ -69,27 +69,30 @@ varnish:
   ports:
     - 80:80
     - 443:443
-  environment: ## need to fix this script to allow multiple configs, but working
-    - VARNISH_BACKEND_IP=nginx_php7
-    - VARNISH_BACKEND_PORT=8000 #nginx's port
   volumes:
     - ./../etc/varnish/templates/default.vcl:/etc/varnish/default.vcl
   links:
     - nginx_php7:nginx_php7
 
+########################################################################################################
 
+rabbitmq:
+  container_name: rabbitmq
+  build: ./../etc/rabbitmq
+  ports:
+    - 5672:5672
+    - 15672:15672
+  volumes:
+    - ./../etc/rabbitmq/data/logs:/etc/rabbitmq/data/logs
+    - ./../etc/rabbitmq/data/mnesia:/etc/rabbitmq/data/mnesia
+
+########################################################################################################
 #nodejs:
 #  build: ./../etc/nodejs
 #  ports:
 #    -
 #
 
-#rabbitmq:
-#  build: ./../etc/rabbitmq
-#  ports:
-#    - 5672:5672
-#    - 15672:15672
-#
 
 #supervisord:
 #  build: ./../etc/supervisord
