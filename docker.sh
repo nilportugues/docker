@@ -10,7 +10,7 @@ case "$1" in
         docker-compose -f $SHARED stop;
         ;;
     init)
-        docker-compose -f $SHARED up -d;
+        docker-compose -f $SHARED up --force-recreate -d;
         ;;
     destroy)
         docker-compose -f $SHARED stop;
@@ -19,7 +19,7 @@ case "$1" in
     update)
         docker-compose -f $SHARED stop;
         docker-compose -f $SHARED build;
-        docker-compose -f $SHARED up -d;
+        docker-compose -f $SHARED up --force-recreate -d;
         ;;
     *)
         echo "Options to use: {start|stop|init|destroy|update}"

@@ -1,24 +1,110 @@
-# This is a basic VCL configuration file for varnish.  See the vcl(7)
-# man page for details on VCL syntax and semantics.
-#
-# Default backend definition.  Set this to point to your content
-# server.
-#
+
 backend default {
-    .host = "${VARNISH_BACKEND_IP}";
-    .port = "${VARNISH_BACKEND_PORT}";
+    .host = "nginx_php7";
+    .port = "8000";
 }
 
 sub vcl_deliver
 {
+    ##------------------------------------------------------------------------------
+    ## Hide some headers
+    ##------------------------------------------------------------------------------
     unset resp.http.Accept-Ranges;
     unset resp.http.Via;
     unset resp.http.X-Varnish;
     unset resp.http.Age;
-
     set resp.http.Accept-Ranges="bytes";
+
+    ##------------------------------------------------------------------------------
+    ## Add some headers
+    ##------------------------------------------------------------------------------
+    set resp.http.Cache-Control = "public";
+
+    ##------------------------------------------------------------------------------
+    ## Add some headers for debugging purposes only
+    ##------------------------------------------------------------------------------
+    if (obj.hits > 0) {
+        set resp.http.X-Cache = "HIT";
+    } else {
+        set resp.http.X-Cache = "MISS";
+    }
 }
 
+sub vcl_recv {
+    ##------------------------------------------------------------------------------
+    ## Get the machine IP that is forwarding the traffic to the backend.
+    ##------------------------------------------------------------------------------
+    set req.http.X-Real-Forwarded-For = regsub(client.ip, ":.*", "");
+
+    if (req.restarts == 0) {
+        if (req.http.x-forwarded-for) {
+            set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
+        } else {
+            set req.http.X-Forwarded-For = client.ip;
+        }
+    }
+
+    ##------------------------------------------------------------------------------
+    ## Don't cache if it's POST, PUT, PATCH or DELETE
+    ##------------------------------------------------------------------------------
+    if (req.request != "GET") {
+        return (pass);
+    }
+
+    ##------------------------------------------------------------------------------
+    ## Not cacheable by default is requires Authorization
+    ##------------------------------------------------------------------------------
+     if (req.http.Authorization) {
+         return (pass);
+     }
+
+    ##------------------------------------------------------------------------------
+    ## Don't allow cookies to affect cacheability
+    ##------------------------------------------------------------------------------
+    unset req.http.Cookie;
+
+
+    return (lookup);
+}
+
+
+
+sub vcl_fetch
+{
+    ##------------------------------------------------------------------------------
+    ## Varnish determined the object was not cacheable
+    ##------------------------------------------------------------------------------
+    if (beresp.ttl <= 0s) {
+        set beresp.http.X-Cacheable = "NO:Not Cacheable";
+
+    ##------------------------------------------------------------------------------
+    ## You don't wish to cache content for logged in users
+    ##------------------------------------------------------------------------------
+    } elsif (req.http.Cookie ~ "(UserID|_session)") {
+        set beresp.http.X-Cacheable = "NO:Got Session";
+        return(hit_for_pass);
+
+    ##------------------------------------------------------------------------------
+    # You are respecting the Cache-Control=private header from the backend
+    ##------------------------------------------------------------------------------
+    } elsif (beresp.http.Cache-Control ~ "private") {
+        set beresp.http.X-Cacheable = "NO:Cache-Control=private";
+        return(hit_for_pass);
+
+    ##------------------------------------------------------------------------------
+    # Varnish determined the object was cacheable
+    ##------------------------------------------------------------------------------
+    } else {
+        set beresp.http.X-Cacheable = "YES";
+        set beresp.grace = 1h;
+        set beresp.ttl = 5m;
+    }
+}
+
+sub vcl_hit {
+
+    return (deliver);
+}
 
 #
 # Below is a commented-out copy of the default VCL logic.  If you

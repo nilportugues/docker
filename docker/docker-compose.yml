@@ -1,3 +1,7 @@
+ansistrano:
+  container_name: ansistrano
+  build: ./../etc/ansistrano
+
 mysql:
   container_name: mysql
   build: ./../etc/mysql
@@ -36,19 +40,7 @@ elasticsearch:
 
 ########################################################################################################
 
-varnish:
-  container_name: varnish
-  build: ./../etc/varnish
-  ports:
-    - 80:80
-    - 443:443
-  environment: ## need to fix this script to allow multiple configs, but working
-    - VARNISH_BACKEND_IP=nginx_php7
-    - VARNISH_BACKEND_PORT=8000 #nginx's port
-  links:
-    - nginx_php7:nginx_php7
 
-########################################################################################################
 
 nginx_php7:
   container_name: nginx_php7
@@ -70,11 +62,22 @@ nginx_php7:
 
 ########################################################################################################
 
-ansistrano:
-  container_name: ansistrano
-  build: ./../etc/ansistrano
 
-########################################################################################################
+varnish:
+  container_name: varnish
+  build: ./../etc/varnish
+  ports:
+    - 80:80
+    - 443:443
+  environment: ## need to fix this script to allow multiple configs, but working
+    - VARNISH_BACKEND_IP=nginx_php7
+    - VARNISH_BACKEND_PORT=8000 #nginx's port
+  volumes:
+    - ./../etc/varnish/templates/default.vcl:/etc/varnish/default.vcl
+  links:
+    - nginx_php7:nginx_php7
+
+
 #nodejs:
 #  build: ./../etc/nodejs
 #  ports:
