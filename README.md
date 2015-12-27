@@ -19,6 +19,7 @@ Install Docker and Docker Compose.
  - Nginx
  - Redis
  - Memcached
+ - RabbitMQ
  - Elastic (Formerly Elasticsearch)
  - Ansistrano
  
