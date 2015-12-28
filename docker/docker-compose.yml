@@ -2,6 +2,8 @@ ansistrano:
   container_name: ansistrano
   build: ./../etc/ansistrano
 
+########################################################################################################
+
 mysql:
   container_name: mysql
   build: ./../etc/mysql
@@ -40,6 +42,17 @@ elasticsearch:
 
 ########################################################################################################
 
+rabbitmq:
+  container_name: rabbitmq
+  build: ./../etc/rabbitmq
+  ports:
+    - 5672:5672
+    - 15672:15672
+  volumes:
+    - ./../etc/rabbitmq/data/logs:/etc/rabbitmq/data/logs
+    - ./../etc/rabbitmq/data/mnesia:/etc/rabbitmq/data/mnesia
+
+########################################################################################################
 
 
 nginx_php7:
@@ -59,9 +72,9 @@ nginx_php7:
     - memcached:memcached
     - mysql:mysql
     - elasticsearch:elasticsearch
+    - rabbitmq:rabbitmq
 
 ########################################################################################################
-
 
 varnish:
   container_name: varnish
@@ -74,17 +87,6 @@ varnish:
   links:
     - nginx_php7:nginx_php7
 
-########################################################################################################
-
-rabbitmq:
-  container_name: rabbitmq
-  build: ./../etc/rabbitmq
-  ports:
-    - 5672:5672
-    - 15672:15672
-  volumes:
-    - ./../etc/rabbitmq/data/logs:/etc/rabbitmq/data/logs
-    - ./../etc/rabbitmq/data/mnesia:/etc/rabbitmq/data/mnesia
 
 ########################################################################################################
 #nodejs:

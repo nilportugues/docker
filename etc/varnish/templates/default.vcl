@@ -1,9 +1,19 @@
+########################################################################################
+## Customized VCL file for serving up a generic website
+##
+## Author: Nil Portugués Calderó <contact@nilportugues.com>
+## Date: 12/27/15
+## Time: 18:27
+########################################################################################
 
 backend default {
     .host = "nginx_php7";
     .port = "8000";
 }
 
+##------------------------------------------------------------------------------
+## Routine used for outgoing requests.
+##------------------------------------------------------------------------------
 sub vcl_deliver
 {
     ##------------------------------------------------------------------------------
@@ -19,13 +29,16 @@ sub vcl_deliver
     ## Add some headers
     ##------------------------------------------------------------------------------
     if (obj.hits > 0) {
-        set resp.http.Cache-Control = "public";
         set resp.http.X-Cache = "HIT";
+        set resp.http.X-Cache-Hits = obj.hits;
     } else {
         set resp.http.X-Cache = "MISS";
     }
 }
 
+##------------------------------------------------------------------------------
+## Routine used to respond to incoming requests.
+##------------------------------------------------------------------------------
 sub vcl_recv {
     ##------------------------------------------------------------------------------
     ## Get the machine IP that is forwarding the traffic to the backend.
@@ -54,19 +67,52 @@ sub vcl_recv {
          return (pass);
      }
 
-    ##------------------------------------------------------------------------------
-    ## Don't allow cookies to affect cacheability
-    ##------------------------------------------------------------------------------
-    unset req.http.Cookie;
 
+    ##------------------------------------------------------------------------------
+    ## Handle compression correctly.
+    ##
+    ## Different browsers send different "Accept-Encoding" headers, even though they
+    ## mostly all support the same compression mechanisms. By consolidating these
+    ## compression headers into a consistent format, we can reduce the size of the
+    ## cache and get more hits.
+    ##
+    ## - Firefox, IE: gzip, deflate
+    ## - Chrome: gzip,deflate,sdch
+    ## - Opera: deflate, gzip, x-gzip, identity, *;q=0
+    ##
+    ##------------------------------------------------------------------------------
+    if (req.http.Accept-Encoding) {
+        if (req.http.Accept-Encoding ~ "gzip") {
+            # If the browser supports it, we'll use gzip.
+            set req.http.Accept-Encoding = "gzip";
+        }
+        else if (req.http.Accept-Encoding ~ "deflate") {
+            # Next, try deflate if it is supported.
+            set req.http.Accept-Encoding = "deflate";
+        }
+        else {
+            # Unknown algorithm. Remove it and send unencoded.
+            unset req.http.Accept-Encoding;
+        }
+    }
+
+    ##------------------------------------------------------------------------------
+    ## Always cache the following file types for all users.
+    ##------------------------------------------------------------------------------
+    if (req.url ~ "(?i)\.(jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc|webp|webm)(\?[a-z0-9]+)?$") {
+        unset req.http.Cookie;
+    }
 
     return (lookup);
 }
 
 
-
+##------------------------------------------------------------------------------
+## Routine used to determine what to do when serving items from the webservers.
+##------------------------------------------------------------------------------
 sub vcl_fetch
 {
+
     ##------------------------------------------------------------------------------
     ## Varnish determined the object was not cacheable
     ##------------------------------------------------------------------------------
@@ -88,53 +134,49 @@ sub vcl_fetch
         return(hit_for_pass);
 
     ##------------------------------------------------------------------------------
+    # You are respecting the Cache-Control=no-cache header from the backend
+    ##------------------------------------------------------------------------------
+    } elsif (beresp.http.Cache-Control ~ "no-cache") {
+        set beresp.http.X-Cacheable = "NO:Cache-Control=no-cache";
+        return(hit_for_pass);
+    ##------------------------------------------------------------------------------
+    ## Don't allow static files to set cookies.
+    ##------------------------------------------------------------------------------
+    } elsif (req.url ~ "(?i)\.(jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc|webp|webm)(\?[a-z0-9]+)?$") {
+        unset beresp.http.set-cookie;
+        set beresp.grace = 6h;
+        set beresp.ttl = 1h;
+        set beresp.http.X-Cacheable = "YES";
+
+    ##------------------------------------------------------------------------------
     # Varnish determined the object was cacheable
     ##------------------------------------------------------------------------------
     } else {
-        set beresp.http.X-Cacheable = "YES";
         set beresp.grace = 1h;
         set beresp.ttl = 5m;
+        set beresp.http.X-Cacheable = "YES";
     }
+
 }
 
-sub vcl_hit {
 
-    return (deliver);
+##------------------------------------------------------------------------------
+## Routine used to determine the cache key if storing/retrieving a cached page.
+##------------------------------------------------------------------------------
+sub vcl_hash {
+    ##------------------------------------------------------------------------------
+    # Build hash with HTTP METHOD + HTTP HOST + URL (with Query Params)
+    ##------------------------------------------------------------------------------
+    hash_data(req.request);
+    hash_data(req.http.host);
+    hash_data(req.url);
+
+    return (hash);
 }
 
-#
-# Below is a commented-out copy of the default VCL logic.  If you
-# redefine any of these subroutines, the built-in logic will be
-# appended to your code.
-# sub vcl_recv {
-#     if (req.restarts == 0) {
-# 	if (req.http.x-forwarded-for) {
-# 	    set req.http.X-Forwarded-For =
-# 		req.http.X-Forwarded-For + ", " + client.ip;
-# 	} else {
-# 	    set req.http.X-Forwarded-For = client.ip;
-# 	}
-#     }
-#     if (req.request != "GET" &&
-#       req.request != "HEAD" &&
-#       req.request != "PUT" &&
-#       req.request != "POST" &&
-#       req.request != "TRACE" &&
-#       req.request != "OPTIONS" &&
-#       req.request != "DELETE") {
-#         /* Non-RFC2616 or CONNECT which is weird. */
-#         return (pipe);
-#     }
-#     if (req.request != "GET" && req.request != "HEAD") {
-#         /* We only deal with GET and HEAD by default */
-#         return (pass);
-#     }
-#     if (req.http.Authorization || req.http.Cookie) {
-#         /* Not cacheable by default */
-#         return (pass);
-#     }
-#     return (lookup);
-# }
+
+
+
 #
 # sub vcl_pipe {
 #     # Note that only the first request to the backend will have
