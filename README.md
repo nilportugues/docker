@@ -4,7 +4,7 @@
 
 ## Contents
 
- - **/docker-compose.yml**: used to orchestrate the Dockerfiles
+ - **/docker/docker-compose.yml**: used to orchestrate the Dockerfiles
  - **/etc:** Dockerfiles and their configurations.
  - **/var/www**: Your web files live here.
 
